@@ -9,13 +9,19 @@ k = constants.Boltzmann
 mu=0.61
 mp = constants.proton_mass
 G = constants.G
+n_iter=10
 val=[]
-with open('table-1-without_errors.csv','r') as f:
+with open('tables/table-1-without_errors.csv','r') as f:
     read = csv.reader(f)
     key = next(read)
     for row in read:
         val.append(row)
-
+plt.figure()
+plt.grid()
+# plt.title('Cluster: {}'.format(name))
+plt.title('All clusters')
+plt.xlabel('$log(a_{bar})$')
+plt.ylabel('$log(a_{tot})$')
 for cluster in val:
     name=cluster[0]
     T=float(cluster[2]) * 11.6*(10**6) #kEv to K
@@ -26,24 +32,21 @@ for cluster in val:
 
     y=[]
     x=[]
-    for i in range(0,100*int(r_c)):
-        r=i/100
+    x_log=[]
+    y_log=[]
+    for i in range(1,n_iter*int(r_c)):
+        r=i/n_iter
+        y.append(a_tot(beta, T,r_c,r))
+        y_log.append(np.log10(a_tot(beta,T,r_c,r)))
+    # plt.figure()
         m_tot = M_total(r,T,beta,r_c)
         m_gas = M_gas(r_c,n_c,beta,r)
         m_stellar = M_stellar(m_tot)
         m_bar = m_gas+m_stellar
-        # print(m_tot/m_bar)
-        y.append(m_tot/m_bar)
-        x.append(a_tot(beta, T,r_c,r))
-        # print(x)
-        # print(x,y)
-    plt.figure()
-    plt.plot(x,y)
-    plt.axhline(y = 1,color='orange',linestyle = '-')
-    plt.grid()
-    plt.title('Cluster: {}'.format(name))
-    plt.xlabel('$a_{tot}$ ($ms^{-2}$)')
-    plt.ylabel('$M_{tot}/M_{bar} (a_{tot})$')
-    plt.savefig('figures/total_acceleration/'+name)
-    # plt.show()
-    # break
+        x.append(a_bar(m_bar,r))
+        x_log.append(np.log10(a_bar(m_bar,r)))
+
+    plt.plot(x_log,y_log)
+
+plt.savefig('figures/all/a_tot_bar_logarithmic')
+plt.show()
