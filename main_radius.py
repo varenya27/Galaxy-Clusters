@@ -51,7 +51,7 @@ for cluster in val:
         m_stellar = M_stellar(M_tot,r_500,r)
         m_bar = m_gas+m_stellar
         m_dark = m_tot-m_bar
-
+        # print("{:e}".format(m_gas))
         # m1.append(m_tot)
         # m2.append(m_gas)
         # m3.append(m_stellar)
