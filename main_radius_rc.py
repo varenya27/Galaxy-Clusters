@@ -1,12 +1,13 @@
-from scipy import constants
 import re
-from masses_witherrors import M_total,M_gas,M_stellar,M_stellar2
 import numpy as np
-from matplotlib import pyplot as plt
 import csv
+from scipy import constants
 from scipy.optimize import curve_fit
-import matplotlib.ticker as tck
 from scipy import stats
+import matplotlib.ticker as tck
+from matplotlib import pyplot as plt
+from matplotlib import gridspec
+from masses_witherrors import M_total,M_gas,M_stellar,M_stellar2
 
 def line(x, m):
     c=0
@@ -64,7 +65,7 @@ for cluster in clusters:
     # if(r_c[1]/r_c[0]>threshold) : continue
     # if(n_c[1]/n_c[0]>threshold) : continue
 
-    x,R, err_R=([] for _ in range(3))
+    x,R, err_R,Mdark,Mbar,Mtot=([] for _ in range(6))
     err_tmp,tmp=[],[]
     rc_list=np.arange(2,r_c[0])
     # rang=range(1,int(r500[0]))#[::int(r500[0]/20)]
@@ -83,9 +84,9 @@ for cluster in clusters:
         m_bar,err_m_bar = m_gas+m_stellar, np.sqrt(err_m_gas**2+err_m_stellar**2)
         m_dark,err_m_dark = m_tot-m_bar, np.sqrt(err_m_tot**2+err_m_bar**2)
         if(m_tot*m_gas*m_stellar==0):continue
-        # if(m_tot/m_bar<=1): 
-        #     start=r
-        #     continue
+        if(m_tot/m_bar<=1): 
+            start=r
+            continue
         # print(err_m_tot,m_tot, err_m_gas,m_gas, err_m_stellar,m_stellar)
         # if(m_stellar<err_m_stellar): print('starf')
         # if(m_gas<err_m_gas): print('gas f')
@@ -101,8 +102,9 @@ for cluster in clusters:
         err_mratio = np.sqrt( (err_m_dark/m_bar)**2+(m_dark*err_m_bar/(m_bar**2))**2 )
         R.append(mratio)
         err_R.append(err_mratio)
-        tmp.append(m_stellar)
-        err_tmp.append(err_m_stellar)
+        Mdark.append(m_dark)
+        Mtot.append(m_tot)
+        Mbar.append(m_bar)
     # print('{:f} {:f} {:f} {:f}'.format(m_tot/1e14,err_m_tot/1e14,m_gas/1e13, err_m_gas/1e13))
     # print(name,' -----')
     N=len(R)
@@ -117,18 +119,52 @@ for cluster in clusters:
     df = len(R_result[::N])
     p=  1 - stats.chi2.cdf(chi_sq,df)
     # print(p)
-    fig, ax = plt.subplots()
-    ax.yaxis.set_minor_locator(tck.AutoMinorLocator())
-    ax.xaxis.set_minor_locator(tck.AutoMinorLocator())
-    ax.patch.set_edgecolor('black')  
-    ax.patch.set_linewidth('1')
-    plt.title('Cluster '+name+' | m='+str(round(param[0],2))+' | $\chi^2$= '+str(round(chi_sq,2)))
-    plt.xlabel('r (Mpc)')
-    plt.ylabel('$M_{dark}/M_{bar}$')
-    plt.errorbar(x[::N], R[::N],err_R[::N],linestyle='',fmt='h',color='black' ,alpha=0.5, capsize=2.0, zorder=0,label ="Data")
+
+    fig=plt.figure()
+    fig.set_figheight(7)
+    fig.set_figwidth(6)
+    spec = gridspec.GridSpec(ncols=1, nrows=2,hspace=0.5, height_ratios=[2, 1])
+    ax1= fig.add_subplot(spec[0])
+    ax1.set_title('Cluster '+name+' | $\chi^2$= '+str(round(chi_sq,2)))
+    ax1.set_xlabel('r (Mpc)')
+    ax1.set_ylabel('$M_{dark}/M_{bar}$')
+    ax1.yaxis.set_minor_locator(tck.AutoMinorLocator())
+    ax1.xaxis.set_minor_locator(tck.AutoMinorLocator(10))
+    ax1.patch.set_edgecolor('black')  
+    ax1.patch.set_linewidth('1')
+    ax1.tick_params(axis="x", which="minor", direction="in",top=True,bottom=True,)
+    ax1.tick_params(axis="y", which="minor", direction="in",left=True,right=True,)
+    ax1.tick_params(axis="x", which="major", direction="inout",top=True,bottom=True,)
+    ax1.tick_params(axis="y", which="major", direction="inout",left=True,right=True,)
+
+    ax1.errorbar(x[::50], R[::50],err_R[::50],linestyle='',fmt='h',color='black' ,alpha=0.5, capsize=2.0, zorder=0,label ="Data")
+    # plt.errorbar(x[::25], R[::25],linestyle='',fmt='o',color='black' ,alpha=0.5, capsize=2.0, zorder=0,)
     # plt.errorbar(x[::N], tmp[::N],err_tmp[::N],linestyle='',fmt='h',color='blue' ,alpha=0.5, capsize=2.0, zorder=0,label ="$M_{star}$")
-    plt.plot(x, R_result, '--', label ="Best Fit",color='orange')
-    plt.legend()
+    ax1.plot(x, R_result, '--', label ="Best Fit",color='darkred')
+    ax1.legend(loc='lower right')
+    # ax1.legend(loc='lower right')
+    # plt.figure()
+    
+    ax2 = fig.add_subplot(spec[1])
+    ax2.plot(x, Mdark, '-',linewidth=3, label ="Dark Mass",)
+    ax2.plot(x, Mbar, '-',linewidth=3, label ="Baryonic Mass",)
+    ax2.plot(x, Mtot, '-',linewidth=3, label ="Total Mass",)    
+    ax2.set_title('Mass Profiles')
+    ax2.set_xlabel('r (Mpc)')
+    ax2.set_ylabel('$M (M_{\odot})$')
+    ax2.yaxis.set_minor_locator(tck.AutoMinorLocator())
+    ax2.xaxis.set_minor_locator(tck.AutoMinorLocator(10))
+    ax2.patch.set_edgecolor('black')  
+    ax2.patch.set_linewidth('1')    
+    ax2.tick_params(axis="x", which="minor", direction="in",top=True,bottom=True,)
+    ax2.tick_params(axis="y", which="minor", direction="in",left=True,right=True,)
+    ax2.tick_params(axis="x", which="major", direction="inout",top=True,bottom=True,)
+    ax2.tick_params(axis="y", which="major", direction="inout",left=True,right=True,)
+
+    ax2.legend(loc='best')
+
+
+    # fig.tight_layout()
     plt.savefig('figures/'+name+'.png')
     # plt.show()
     plt.close()
