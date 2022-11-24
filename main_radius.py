@@ -1,9 +1,8 @@
 from scipy import constants
-from masses import M_total,M_gas,M_stellar
+from masses import M_total,M_gas,M_stellar,M_gas1
 import numpy as np
 from matplotlib import pyplot as plt
 import csv
-
 k = constants.Boltzmann
 mu=0.61
 mp = constants.proton_mass
@@ -47,10 +46,12 @@ for cluster in val:
     for i in range(start,n_iter*int(r_500)):
         r=i/n_iter
         m_tot = M_total(r,T,beta,r_c)
-        m_gas = M_gas(r_c,n_c,beta,r)
+        m_gas = M_gas1(r_c,n_c,beta,r)
         m_stellar = M_stellar(M_tot,r_500,r)
         m_bar = m_gas+m_stellar
         m_dark = m_tot-m_bar
+        print("{:e} {:e} {:e}".format(m_tot, m_gas, m_stellar))
+        print("{:e} {:e}".format(m_bar, m_dark))
         # print("{:e}".format(m_gas))
         # m1.append(m_tot)
         # m2.append(m_gas)
@@ -60,6 +61,7 @@ for cluster in val:
     # writer.writerow[name, m1[-1]/(10**14),m2[-1]/(10**13),m3[-1]/(10**13)]
     # for a,b in zip(y,z):
     #     print(b-a)
+    quit()
     plt.figure()
     plt.grid()
     plt.title('Cluster '+name)
