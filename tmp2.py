@@ -1,4 +1,6 @@
 from scipy import stats
+from astropy.constants import M_sun
+from astropy.units import kg
 
-p=  1 - stats.chi2.cdf(3.84,1)
-print(p)
+M=1.989e30
+print(M, M_sun/kg)

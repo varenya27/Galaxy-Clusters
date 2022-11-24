@@ -19,7 +19,7 @@ with open('tables/NCCC_all_no-errors.csv','r') as f:
 # plt.title('All Clusters')
 # plt.xlabel('r (kpc)')
 # plt.ylabel('$M_{tot}/M_{bar} (r)$')
-plt.ylabel('$M_{dark}/M_{bar} (r)$')
+# plt.ylabel('$M_{dark}/M_{bar} (r)$')
 
 for cluster in val:
     name=cluster[0]
@@ -35,7 +35,7 @@ for cluster in val:
     for i in range(0,n_iter*int(r_500)):
         r=i/n_iter
         m_tot = M_total(r,T,beta,r_c)
-        m_gas = M_gas(r_c,n_c,beta,r)
+        m_gas = M_gas1(r_c,n_c,beta,r)
         m_stellar = M_stellar(M_tot,r_500,r)
         m_bar = m_gas+m_stellar
         if(m_tot/m_bar>1):
@@ -51,21 +51,23 @@ for cluster in val:
         m_bar = m_gas+m_stellar
         m_dark = m_tot-m_bar
         print("{:e} {:e} {:e}".format(m_tot, m_gas, m_stellar))
-        print("{:e} {:e}".format(m_bar, m_dark))
+        # print("{:e} {:e}".format(m_bar, m_dark))
         # print("{:e}".format(m_gas))
         # m1.append(m_tot)
         # m2.append(m_gas)
         # m3.append(m_stellar)
         y.append(m_dark/m_bar)
         z.append(m_tot/m_bar)
+    print(name,' -----')
     # writer.writerow[name, m1[-1]/(10**14),m2[-1]/(10**13),m3[-1]/(10**13)]
     # for a,b in zip(y,z):
     #     print(b-a)
-    quit()
+    # quit()
     plt.figure()
     plt.grid()
     plt.title('Cluster '+name)
     plt.xlabel('r (kpc)')
+    plt.ylabel('$M_{dark}/M_{bar} (r)$')
     x=np.arange(start,r_500)
     plt.plot(x,y)
     plt.plot(x,z)
@@ -79,5 +81,5 @@ for cluster in val:
     # # plt.scatter(x, y, s=0.2,color='black')
     # plt.axhline(y=1,color='teal',linestyle='-')
 
-    plt.savefig('figures2/radius/'+name)
-    # plt.show()
+    # plt.savefig('figures2/radius/'+name)
+    plt.show()

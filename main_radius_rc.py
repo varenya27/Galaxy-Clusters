@@ -23,10 +23,10 @@ with open('tables/table.csv','r') as f:
     key = next(read)
     for row in read:
         clusters.append(row)
-
+count=0
 for cluster in clusters:
     name=cluster[0]
-    print('cluster: '+name)
+    # print('cluster: '+name)
 
     x=float((cluster[2][:cluster[2].index("^")])) 
     err_x = (float(re.findall('\{(.*?)\}',cluster[2])[0])-float(re.findall('\{(.*?)\}',cluster[2])[1]))/2
@@ -46,7 +46,7 @@ for cluster in clusters:
 
     x=float((cluster[-2][:cluster[-2].index("^")]))
     err_x = (float(re.findall('\{(.*?)\}',cluster[-2])[0])-float(re.findall('\{(.*?)\}',cluster[-2])[1]))/2
-    r500=[x*(3.086e22),err_x*(3.086e22)]   
+    r500=[x,err_x]   
 
     x=float((cluster[-1][:cluster[-1].index("^")]))
     err_x = (float(re.findall('\{(.*?)\}',cluster[-1])[0])-float(re.findall('\{(.*?)\}',cluster[-1])[1]))/2
@@ -55,6 +55,7 @@ for cluster in clusters:
     t_cool=float((cluster[6][:cluster[6].index("^")]))
     if t_cool<1.3:
         continue
+    count+=1
     # print(name)
     # print(name,T,beta,r_c,n_c)
     # threshold=0.2
@@ -65,9 +66,15 @@ for cluster in clusters:
 
     x,R, err_R=([] for _ in range(3))
     err_tmp,tmp=[],[]
-    r_=np.arange(0,r_c[0])
-    # for i in range(1,int(r_c[0])):
-    for r in r_:
+    rc_list=np.arange(2,r_c[0])
+    # rang=range(1,int(r500[0]))#[::int(r500[0]/20)]
+    # for r in range(1,int(r500[0])):
+    r500_list=np.arange(2,r500[0]*1000)
+    # print(name,r500_list)
+    for r in r500_list:
+    # for r in rc_list:
+        # r/=1000
+        # print(r)
         m_tot,err_m_tot = M_total(r,Th,beta,r_c)
         m_gas, err_m_gas = M_gas(r_c,n_c,beta,r)
         m_stellar, err_m_stellar = M_stellar([m_gas,err_m_gas])
@@ -76,9 +83,9 @@ for cluster in clusters:
         m_bar,err_m_bar = m_gas+m_stellar, np.sqrt(err_m_gas**2+err_m_stellar**2)
         m_dark,err_m_dark = m_tot-m_bar, np.sqrt(err_m_tot**2+err_m_bar**2)
         if(m_tot*m_gas*m_stellar==0):continue
-        if(m_tot/m_bar<=1): 
-            start=r
-            continue
+        # if(m_tot/m_bar<=1): 
+        #     start=r
+        #     continue
         # print(err_m_tot,m_tot, err_m_gas,m_gas, err_m_stellar,m_stellar)
         # if(m_stellar<err_m_stellar): print('starf')
         # if(m_gas<err_m_gas): print('gas f')
@@ -96,11 +103,11 @@ for cluster in clusters:
         err_R.append(err_mratio)
         tmp.append(m_stellar)
         err_tmp.append(err_m_stellar)
-        print('{:e} {:e} {:e}'.format(m_tot,m_gas, m_stellar,))
-    print('-----')
+    # print('{:f} {:f} {:f} {:f}'.format(m_tot/1e14,err_m_tot/1e14,m_gas/1e13, err_m_gas/1e13))
+    # print(name,' -----')
     N=len(R)
     N=int(N/10)+1
-
+    # quit()
     param, param_cov = curve_fit(line, x, R, sigma=err_R, absolute_sigma=True)
     perr = np.sqrt(np.diag(param_cov))
     R_result = param[0]*np.array(x)#+param[1]
@@ -116,17 +123,18 @@ for cluster in clusters:
     ax.patch.set_edgecolor('black')  
     ax.patch.set_linewidth('1')
     plt.title('Cluster '+name+' | m='+str(round(param[0],2))+' | $\chi^2$= '+str(round(chi_sq,2)))
-    plt.xlabel('r (kpc)')
+    plt.xlabel('r (Mpc)')
     plt.ylabel('$M_{dark}/M_{bar}$')
     plt.errorbar(x[::N], R[::N],err_R[::N],linestyle='',fmt='h',color='black' ,alpha=0.5, capsize=2.0, zorder=0,label ="Data")
     # plt.errorbar(x[::N], tmp[::N],err_tmp[::N],linestyle='',fmt='h',color='blue' ,alpha=0.5, capsize=2.0, zorder=0,label ="$M_{star}$")
     plt.plot(x, R_result, '--', label ="Best Fit",color='orange')
     plt.legend()
-    # plt.savefig('figures/'+name+'.png')
-    plt.show()
+    plt.savefig('figures/'+name+'.png')
+    # plt.show()
     plt.close()
 
 
     with open('chi.txt','a') as f:
         x = name+' : '+str(round(chi_sq,2))+' : '+str(p)+'\n'
         f.write(x)
+print('total number of clusters:',count)

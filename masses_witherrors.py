@@ -6,8 +6,8 @@ import numpy as np
 from scipy.integrate import quad
 m=constants.atomic_mass
 M_sun=1.989e30
-norm = 3.086e19
-
+# mpc = 3.086e22
+kpc = 3.086e19
 
 def M_total(r, T_,Beta,R_c):
     k = constants.Boltzmann
@@ -17,42 +17,54 @@ def M_total(r, T_,Beta,R_c):
     T,err_T=T_
     beta,err_beta=Beta
     r_c,err_r_c=R_c
-    M_r=((3*beta*k*T*r* (3.086e19))/(G*mu*mp))*( (r/r_c)**2 / (1+(r/r_c)**2))
+    r_c*=kpc
+    err_r_c*=kpc
+    r*=kpc
+    M_r=((3*beta*k*T*r)/(G*mu*mp))*( (r/r_c)**2 / (1+(r/r_c)**2))
     err_M_r = np.sqrt( (M_r*err_T/T)**2 + (M_r*err_beta/beta)**2 + (M_r*(-2*err_r_c/(r_c*(1+(r/r_c)**2))))**2 )
     
     M_r=M_r/M_sun
     err_M_r = err_M_r/M_sun
     return [M_r,err_M_r]
 
+def M_gas1(r_c,n_c,beta,lim):
+    def M(rx):
+        n_r=n_c*((1+(rx/r_c)**2))**(-3*beta/2)*constants.atomic_mass*0.6
+        return n_r*4*np.pi*(rx* (3.086*(10**19)))**2
+    M_cur,err = quad(M,0,lim)
+    return M_cur*kg* (3.086*(10**19))*2/M_sun
+
 
 def M_gas(R_c,N_c,Beta,lim):
     r_c,err_r_c=R_c
+    r_c*=kpc
+    err_r_c*=kpc
     n_c,err_n_c=N_c
     beta,err_beta=Beta
     def M(rx):
-        n_r=n_c*((1+(rx/(r_c*norm))**2))**(-3*beta/2)*m*0.6
+        n_r=n_c*((1+(rx/(r_c))**2))**(-3*beta/2)*m*0.6
         return n_r*4*np.pi*(rx)**2
-    M_cur,err = quad(M,0,lim*norm)
+    M_cur,err = quad(M,0,lim*kpc)
     
     def M_n_(rx):
-        n_r=err_n_c*((1+(rx/(r_c*norm))**2))**(-3*beta/2)*m*0.6
+        n_r=err_n_c*((1+(rx/(r_c))**2))**(-3*beta/2)*m*0.6
         return n_r*4*np.pi*(rx)**2
-    M_n,err1 = quad(M_n_,0,lim*norm)
+    M_n,err1 = quad(M_n_,0,lim*kpc)
 
     def M_beta_(rx):
-        n_r=n_c*((1+(rx/(r_c*norm))**2))**(-3*beta/2)*m*0.6
-        return n_r*4*np.pi*(rx)**2*(-1.5*np.log(1+(rx/(r_c*norm))**2))*err_beta
-    M_beta,err2 = quad(M_beta_,0,lim*norm)
+        n_r=n_c*((1+(rx/(r_c))**2))**(-3*beta/2)*m*0.6
+        return n_r*4*np.pi*(rx)**2*(-1.5*np.log(1+(rx/(r_c))**2))*err_beta
+    M_beta,err2 = quad(M_beta_,0,lim*kpc)
 
     def M_rc_(rx):
-        n_r=n_c*((1+(rx/(r_c*norm))**2))**(-3*beta/2-1)*m*0.6*3*beta*rx**2/((r_c*norm)**3)*(err_r_c*norm)
+        n_r=n_c*((1+(rx/(r_c))**2))**(-3*beta/2-1)*m*0.6*3*beta*rx**2/((r_c)**3)*(err_r_c)
         return n_r*4*np.pi*(rx)**2
-    M_rc,err3 = quad(M_rc_,0,lim*norm)
+    M_rc,err3 = quad(M_rc_,0,lim*kpc)
     # print("{:e} {:e} {:e} {:e} ".format(M_cur, M_beta,M_n,M_rc))
     M_cur/=M_sun
     err_M_cur = np.sqrt((M_n)**2+(M_beta)**2+(M_rc)**2)/M_sun
 
-    return [M_cur,err_M_cur]
+    return [2*M_cur,err_M_cur]
 
 
 def M_stellar(M_gas):
@@ -73,7 +85,7 @@ def M_stellar2(M_gas,R500,r):
     m_gas,err_m_gas = M_gas
     r500,err_r500 = R500
     a,err_a = 0.6,0.1
-    r*=norm
+    r*=mpc
     m_star = (4e12*(((m_gas)/(5.7e13))**a))*(r/r500)
     dMsdMg = (4e12*(((m_gas)/(5.7e13))**a))*(r/r500) *a/m_gas
     dMsda  = (4e12*(((m_gas)/(5.7e13))**a))*(r/r500) *np.log(((m_gas)/(5.7e13)))
